@@ -14,8 +14,8 @@ phases:
       - echo Updating kubeconfig...
       - aws sts get-caller-identity
       - aws eks update-kubeconfig --region us-east-1 --name eks-ctl-hello
-      - curl -vk $(aws eks describe-cluster --name eks-ctl-hello --region us-east-1 --query "cluster.endpoint" --output text)
-      - kubectl get nodes --validate=false
+      # - curl -vk $(aws eks describe-cluster --name eks-ctl-hello --region us-east-1 --query "cluster.endpoint" --output text)
+   
 
   build:
     commands:
