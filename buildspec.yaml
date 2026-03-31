@@ -12,7 +12,7 @@ phases:
   pre_build:
     commands:
       - echo Updating kubeconfig...
-      - aws eks update-kubeconfig --region ap-south-1 --name hello-eks
+      - aws eks update-kubeconfig --region ap-south-1 --name eks-ctl-hello
 
   build:
     commands:
