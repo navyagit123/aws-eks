@@ -1,23 +1,63 @@
+# version: 0.2
+
+# phases:
+#   install:
+#     commands:
+#       - echo Installing kubectl properly...
+#       - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#       - chmod +x kubectl
+#       - mv kubectl /usr/local/bin/
+#       - kubectl version --client
+
+#   pre_build:
+#     commands:
+#       - echo Updating kubeconfig...
+#       - aws sts get-caller-identity
+#       - aws eks update-kubeconfig --region us-east-1 --name eks-ctl-hello
+#       # - curl -vk $(aws eks describe-cluster --name eks-ctl-hello --region us-east-1 --query "cluster.endpoint" --output text)
+   
 version: 0.2
 
+env:
+  variables:
+    AWS_REGION: us-east-1
+    CLUSTER_NAME: eks-private-hello
+    ECR_REPO: eks-hello
+
 phases:
+
   install:
     commands:
-      - echo Installing kubectl properly...
-      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-      - chmod +x kubectl
+      - echo Installing kubectl
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.27.0/2023-11-14/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
       - mv kubectl /usr/local/bin/
-      - kubectl version --client
 
   pre_build:
     commands:
-      - echo Updating kubeconfig...
-      - aws sts get-caller-identity
-      - aws eks update-kubeconfig --region us-east-1 --name eks-ctl-hello
-      # - curl -vk $(aws eks describe-cluster --name eks-ctl-hello --region us-east-1 --query "cluster.endpoint" --output text)
-   
+      - echo Logging into ECR
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
 
   build:
     commands:
-      - echo Deploying to EKS...
-      - kubectl apply -f k8s/ --validate=false
+      - echo Building Docker image
+      - docker build -t $ECR_REPO:latest ./app
+      - docker tag $ECR_REPO:latest $ECR_URI:latest
+
+  post_build:
+    commands:
+      - echo Pushing to ECR
+      - docker push $ECR_URI:latest
+
+      - echo Updating kubeconfig
+      - aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+      - echo Deploying to EKS
+      - sed -i "s|<ECR_IMAGE_URI>|$ECR_URI|g" k8s/deployment.yaml
+      - kubectl apply -f k8s/
+#   build:
+#     commands:
+#       - echo Deploying to EKS...
+#       - kubectl apply -f k8s/ --validate=false
