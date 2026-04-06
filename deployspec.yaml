@@ -1,42 +1,36 @@
-# version: 0.2
-
-# phases:
-#   install:
-#     commands:
-#       - echo Installing kubectl...
-#       - curl -o kubectl https://amazon-eks.s3.us-east-1.amazonaws.com/1.27.1/2023-04-19/bin/linux/amd64/kubectl
-#       - chmod +x kubectl
-#       - mv kubectl /usr/local/bin/
-
-#   pre_build:
-#     commands:
-#       - echo Updating kubeconfig...
-#       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster
-
-#   build:
-#     commands:
-#       - echo Deploying to EKS...
-#       - kubectl apply -f k8s/deployment.yaml
-#       - kubectl apply -f k8s/service.yaml
-
 version: 0.2
 
 phases:
   install:
     commands:
+      - echo "Installing kubectl..."
       - curl -o kubectl https://amazon-eks.s3.us-east-1.amazonaws.com/1.27.1/2023-04-19/bin/linux/amd64/kubectl
       - chmod +x kubectl
       - mv kubectl /usr/local/bin/
+      - kubectl version --client   # ✅ verify install
 
   pre_build:
     commands:
+      - echo "Setting variables..."
       - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - REGION=us-east-1
       - IMAGE_URI=$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/eks-hello:latest
+
+      - echo "Updating deployment file..."
       - sed -i "s|IMAGE_URI|$IMAGE_URI|g" k8s/deployment.yaml
+
+      - echo "Updating kubeconfig..."
       - aws eks update-kubeconfig --region $REGION --name eks-cluster
+
+      - echo "Checking cluster access..."
+      - kubectl get nodes
 
   build:
     commands:
+      - echo "Deploying to EKS..."
       - kubectl apply -f k8s/deployment.yaml
       - kubectl apply -f k8s/service.yaml
+
+  post_build:
+    commands:
+      - echo "Deployment completed"
