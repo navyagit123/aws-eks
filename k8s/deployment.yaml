@@ -1,42 +1,19 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: hello-app
-#   labels:
-#     app: hello
-# spec:
-#   replicas: 2
-#   selector:
-#     matchLabels:
-#       app: hello
-#   template:
-#     metadata:
-#       labels:
-#         app: hello
-#     spec:
-#       containers:
-#       - name: hello-container
-#         image: nginx
-#         ports:
-#         - containerPort: 80
-
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-deployment
+  name: my-app
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: hello
+      app: my-app
   template:
     metadata:
       labels:
-        app: hello
+        app: my-app
     spec:
       containers:
-      - name: hello
-        image: <ECR_IMAGE_URI>:latest
+      - name: my-app
+        image: <ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
         ports:
         - containerPort: 80
