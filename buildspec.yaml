@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     REGION: us-east-1
-    REPO_NAME: my-app
+    REPO_NAME: eks-hello
     IMAGE_TAG: latest
 
 phases:
